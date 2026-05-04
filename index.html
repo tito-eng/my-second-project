@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ポケモン図鑑</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --card-bg: #16213e;
+      --accent: #e94560;
+      --text: #eaeaea;
+      --subtext: #a0a0b0;
+      --shadow: rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 24px;
+      letter-spacing: 2px;
+      text-align: center;
+      background: linear-gradient(135deg, #f5a623, #e94560);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.5s ease;
+    }
+
+    .card-glow {
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      opacity: 0.15;
+      filter: blur(60px);
+      transition: background 0.5s ease;
+      pointer-events: none;
+    }
+
+    .pokemon-number {
+      font-size: 0.85rem;
+      color: var(--subtext);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .pokemon-name {
+      font-size: 2.2rem;
+      font-weight: 800;
+      text-transform: capitalize;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .types {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .type-badge {
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .artwork-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      position: relative;
+      height: 180px;
+    }
+
+    .pokemon-img {
+      height: 180px;
+      width: 180px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 20px rgba(0,0,0,0.5));
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .pokemon-img.loading {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+
+    .info-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .info-item {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .info-label {
+      font-size: 0.7rem;
+      color: var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .stats {
+      margin-bottom: 24px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+
+    .stat-name {
+      font-size: 0.7rem;
+      color: var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 36px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    .stat-bar-bg {
+      flex: 1;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .stat-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+      background: linear-gradient(90deg, #f5a623, #e94560);
+    }
+
+    .stat-val {
+      font-size: 0.75rem;
+      font-weight: 700;
+      width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f5a623, #e94560);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+      box-shadow: 0 6px 20px rgba(233,69,96,0.4);
+    }
+
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(233,69,96,0.5); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .nav-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .btn-outline {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .btn-outline:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); }
+    .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .spinner {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.15);
+      border-top-color: #e94560;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .spinner.visible { display: block; }
+
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in { animation: fadeInUp 0.4s ease forwards; }
+
+    .abilities {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .ability-badge {
+      padding: 3px 10px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      font-size: 0.72rem;
+      text-transform: capitalize;
+      color: var(--subtext);
+    }
+
+    footer {
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: var(--subtext);
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>ポケモン図鑑</h1>
+
+  <div class="card" id="card">
+    <div class="card-glow" id="glow"></div>
+
+    <div class="pokemon-number" id="poke-number">#000</div>
+    <div class="pokemon-name" id="poke-name">Loading...</div>
+
+    <div class="types" id="poke-types"></div>
+
+    <div class="artwork-wrapper">
+      <img class="pokemon-img loading" id="poke-img" src="" alt="" />
+      <div class="spinner visible" id="spinner"></div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-item">
+        <div class="info-label">身長</div>
+        <div class="info-value" id="poke-height">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">体重</div>
+        <div class="info-value" id="poke-weight">—</div>
+      </div>
+    </div>
+
+    <div class="abilities" id="poke-abilities"></div>
+
+    <div class="stats" id="poke-stats"></div>
+
+    <div class="nav-row">
+      <button class="btn-outline" id="btn-prev" onclick="navigate(-1)">← 前へ</button>
+      <button class="btn-outline" id="btn-next" onclick="navigate(1)">次へ →</button>
+    </div>
+    <button class="btn" id="btn-random" onclick="loadRandom()">🎲 ランダムで切り替え</button>
+  </div>
+
+  <footer>データ提供: PokéAPI &nbsp;|&nbsp; 総数 1025 種</footer>
+
+  <script>
+    const TOTAL = 1025;
+    let currentId = 1;
+    let busy = false;
+
+    const TYPE_COLORS = {
+      normal: '#A8A878', fire: '#F08030', water: '#6890F0',
+      electric: '#F8D030', grass: '#78C850', ice: '#98D8D8',
+      fighting: '#C03028', poison: '#A040A0', ground: '#E0C068',
+      flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+      rock: '#B8A038', ghost: '#705898', dragon: '#7038F8',
+      dark: '#705848', steel: '#B8B8D0', fairy: '#EE99AC',
+    };
+
+    const STAT_ABBR = {
+      hp: 'HP', attack: 'ATK', defense: 'DEF',
+      'special-attack': 'SpA', 'special-defense': 'SpD', speed: 'SPD',
+    };
+
+    async function fetchPokemon(id) {
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      if (!res.ok) throw new Error('fetch failed');
+      return res.json();
+    }
+
+    function setLoading(state) {
+      busy = state;
+      document.getElementById('spinner').classList.toggle('visible', state);
+      document.getElementById('btn-random').disabled = state;
+      document.getElementById('btn-prev').disabled = state;
+      document.getElementById('btn-next').disabled = state;
+      if (state) {
+        document.getElementById('poke-img').classList.add('loading');
+      }
+    }
+
+    function render(data) {
+      currentId = data.id;
+
+      // Number & name
+      document.getElementById('poke-number').textContent = `#${String(data.id).padStart(3, '0')}`;
+      document.getElementById('poke-name').textContent = data.name;
+
+      // Types
+      const typesEl = document.getElementById('poke-types');
+      typesEl.innerHTML = '';
+      const primaryColor = TYPE_COLORS[data.types[0].type.name] || '#888';
+      data.types.forEach(t => {
+        const badge = document.createElement('span');
+        badge.className = 'type-badge';
+        badge.textContent = t.type.name;
+        badge.style.background = TYPE_COLORS[t.type.name] || '#888';
+        typesEl.appendChild(badge);
+      });
+
+      // Card glow
+      document.getElementById('glow').style.background = primaryColor;
+      document.getElementById('card').style.background =
+        `linear-gradient(160deg, ${primaryColor}18 0%, var(--card-bg) 40%)`;
+
+      // Image
+      const imgEl = document.getElementById('poke-img');
+      const artwork =
+        data.sprites?.other?.['official-artwork']?.front_default ||
+        data.sprites?.front_default || '';
+      imgEl.classList.add('loading');
+      imgEl.onload = () => {
+        document.getElementById('spinner').classList.remove('visible');
+        imgEl.classList.remove('loading');
+      };
+      imgEl.src = artwork;
+      imgEl.alt = data.name;
+
+      // Height / Weight
+      document.getElementById('poke-height').textContent =
+        `${(data.height / 10).toFixed(1)} m`;
+      document.getElementById('poke-weight').textContent =
+        `${(data.weight / 10).toFixed(1)} kg`;
+
+      // Abilities
+      const ablEl = document.getElementById('poke-abilities');
+      ablEl.innerHTML = '';
+      data.abilities.forEach(a => {
+        const badge = document.createElement('span');
+        badge.className = 'ability-badge';
+        badge.textContent = a.ability.name + (a.is_hidden ? ' (隠)' : '');
+        ablEl.appendChild(badge);
+      });
+
+      // Stats
+      const statsEl = document.getElementById('poke-stats');
+      statsEl.innerHTML = '';
+      data.stats.forEach(s => {
+        const abbr = STAT_ABBR[s.stat.name] || s.stat.name;
+        const pct = Math.min(100, (s.base_stat / 255) * 100);
+        statsEl.innerHTML += `
+          <div class="stat-row">
+            <span class="stat-name">${abbr}</span>
+            <div class="stat-bar-bg"><div class="stat-bar" style="width:0%" data-pct="${pct}"></div></div>
+            <span class="stat-val">${s.base_stat}</span>
+          </div>`;
+      });
+
+      // Animate stat bars
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.stat-bar').forEach(bar => {
+          bar.style.width = bar.dataset.pct + '%';
+        });
+      });
+
+      // Card animate
+      document.getElementById('card').classList.remove('animate-in');
+      void document.getElementById('card').offsetWidth;
+      document.getElementById('card').classList.add('animate-in');
+
+      // Nav buttons
+      document.getElementById('btn-prev').disabled = data.id <= 1;
+      document.getElementById('btn-next').disabled = data.id >= TOTAL;
+    }
+
+    async function load(id) {
+      if (busy) return;
+      setLoading(true);
+      try {
+        const data = await fetchPokemon(id);
+        render(data);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('poke-name').textContent = 'エラー';
+        document.getElementById('spinner').classList.remove('visible');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function loadRandom() {
+      const id = Math.floor(Math.random() * TOTAL) + 1;
+      load(id);
+    }
+
+    function navigate(dir) {
+      const next = currentId + dir;
+      if (next >= 1 && next <= TOTAL) load(next);
+    }
+
+    // Start with a random Pokemon
+    loadRandom();
+  </script>
+</body>
+</html>
